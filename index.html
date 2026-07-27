@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام شركة درب لاين - الرئيسية</title>
+    <title>نظام شركة نوال الفهمي التجارية - الرئيسية</title>
     <style>
         * { box-sizing: border-box; }
         
@@ -11,15 +11,15 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
             margin: 0; 
             padding: 0; 
-            background-color: #f4f7f6; 
+            background-color: #f0f0f0; 
             text-align: center; 
         }
 
         /* الجزء العلوي */
          .header-section {
             width: 100%;
-            height: 300px; /* زيادة الارتفاع لاستيعاب الشعار */
-            background-image: linear-gradient(rgba(0,0,0,0.100), rgba(0,0,0,0.100)), url('header_bg.jpg'); 
+            height: 350px; /* زيادة الارتفاع لاستيعاب الشعار */
+            background-image: linear-gradient(rgba(0,0,0,0.0), rgba(0,0,0,0.150)), url('header_bg.jpg'); 
             background-size: cover;
             background-position: center;
             display: flex;
@@ -27,25 +27,25 @@
             justify-content: center;
             align-items: center;
             color: white;
-            box-shadow: 0 4px 5px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 5px rgba(0,0,0,0.3);
         }
 
         .logo {
-            width: 250px;
-            height: 250px;
+            width: 350px;
+            height: 350px;
             background-image: url('logo.png'); 
             background-size: contain;
             background-repeat: no-repeat;
             background-position: center;
             margin: 0 auto 10px auto;
-            filter: drop-shadow(2px 2px 5px rgba(0,0,0,0.5));
+            filter: drop-shadow(2px 2px 5px rgba(0,0,0,0.0));
         }
 
         .header-section h1 { 
-            margin: -40px auto 50px auto; 
+            margin: -30px auto 30px auto; 
             font-size: 26px; 
             letter-spacing: 1px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.90); }
+            text-shadow: 2px 2px 4px rgba(0,0,0,90.90); }
 
         /* حاوية القوائم الأساسية */
         .main-wrapper {
@@ -90,13 +90,13 @@
         }
 
         /* ألوان قائمة كشف الركاب (اليمين) */
-        .btn-ksh { background: linear-gradient(135deg, #27ae60, #2ecc71); }
+        .btn-ksh { background: linear-gradient(135deg, #d3755e, #bc401e); }
         
         /* ألوان قائمة تقرير الفحص (اليسار) */
-        .btn-tq { background: linear-gradient(135deg, #2980b9, #3498db); }
+        .btn-tq { background: linear-gradient(135deg, #2980b9, #213c69); }
         
         /* لون زر كشف جديد */
-        .btn-100 { background: linear-gradient(135deg, #d35400, #e67e22); }
+        .btn-100 { background: linear-gradient(135deg, #a19d9a, #a19d9a); }
 
         .btn:hover { 
             transform: translateY(-3px); 
@@ -121,7 +121,7 @@
 
     <div class="header-section">
         <div class="logo"></div>
-        <h1>شركة درب لاين</h1>
+        <h1>شركة نوال الفهمي التجارية</h1>
         <h1>نظام الكشوفات والتقارير</h1>
     </div>
 
@@ -170,6 +170,9 @@
                       </a>
             <a href="ksh/14/index.html" class="btn btn-ksh" onclick="saveVisit('كشف ركاب: محمد اكبر ')">
                 👤 محمد اكبر محمدعلي 
+                      </a>
+            <a href="ksh/15/index.html" class="btn btn-ksh" onclick="saveVisit('كشف ركاب: عادل ابو الكلام ')">
+                👤 عادل حافظ ابو الكلام 
                       </a>
             <a href="ksh/100/index.html" class="btn btn-100" onclick="saveVisit('كشف ركاب جديد')">
                 ➕ كشف ركاب جديد
@@ -220,12 +223,15 @@
             <a href="tq/14/index.html" class="btn btn-tq" onclick="saveVisit('تقرير فحص: محمد اكبر')">
                 👤 محمد اكبر محمدعلي
             </a>
+            <a href="tq/15/index.html" class="btn btn-tq" onclick="saveVisit('تقرير فحص: عادل ابو الكلام')">
+                👤 عادل حافظ ابو الكلام
+            </a>
             <a href="tq/100/index.html" class="btn btn-100" onclick="saveVisit('تقرير فحص جديد')">
                 📝 تقرير فحص جديد
             </a>
         </div>
 
-        <div id="status" class="status-bar">مرحباً بك في نظام شركة درب لاين</div>
+        <div id="status" class="status-bar">مرحباً بك في نظام شركة نوال الفهمي التجارية</div>
     </div>
 
     <script>

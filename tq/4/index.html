@@ -30,11 +30,15 @@
         .page { 
             width: 210mm; 
             height: 296.8mm; 
+            background-size: 100% 100%; 
+            background-repeat: no-repeat; 
             position: relative; 
             background-color: white; 
             overflow: hidden; 
             display: block; 
             page-break-after: always;
+            box-shadow: none;
+
         }
 
         #page1 { background-image: url('0001.jpg'); background-size: 100% 100%; background-repeat: no-repeat; }
@@ -139,7 +143,7 @@
             try {
                 const worker = html2pdf().set(opt).from(element);
                 const pdfBlob = await worker.output('blob');
-                const file = new File([pdfBlob], "Report.pdf", { type: "application/pdf" });
+                const file = new File([pdfBlob], "تقرير الفحص.pdf", { type: "application/pdf" });
 
                 if (navigator.canShare && navigator.canShare({ files: [file] })) {
                     await navigator.share({ files: [file], title: 'تقرير الفحص' });
