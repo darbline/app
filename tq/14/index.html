@@ -154,7 +154,7 @@
             try {
                 const worker = html2pdf().set(opt).from(element);
                 const pdfBlob = await worker.output('blob');
-                const file = new File([pdfBlob], "تقرير الفحص - الصفحة الأولى.pdf", { type: "application/pdf" });
+                const file = new File([pdfBlob], "تقرير الفحص.pdf", { type: "application/pdf" });
 
                 if (navigator.canShare && navigator.canShare({ files: [file] })) {
                     await navigator.share({ files: [file], title: 'تقرير الفحص' });
