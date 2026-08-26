@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+    <meta name="viewport" content="width=794, initial-scale=1.0"> 
     <title>تقرير الفحص - تاريخ تلقائي</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
@@ -38,7 +38,6 @@
             display: block; 
             page-break-after: always;
             box-shadow: none;
-
         }
 
         #page1 { background-image: url('0001.jpg'); background-size: 100% 100%; background-repeat: no-repeat; }
@@ -50,10 +49,23 @@
         .from-loc { top: 223px; left: 50px; width: 145px; }
         .to-loc { top: 223px; left: 205px; width: 145px; }
 
+        /* تحسين العرض متجاوب للجوال */
+        @media screen and (max-width: 768px) {
+            body {
+                overflow-x: auto;
+                align-items: stretch;
+            }
+            #pdf-content {
+                transform-origin: top center;
+                transform: scale(calc(100vw / 220mm));
+                margin: 10px auto;
+            }
+        }
+
         @media print { 
             .toolbar { display: none !important; }
             body { background: white; }
-            #pdf-content { margin: 0; }
+            #pdf-content { margin: 0; transform: none !important; }
             @page { size: A4; margin: 0; } 
         }
     </style>
@@ -99,23 +111,22 @@
                 
                 // التحقق مما إذا كانت الخانة هي d6 أو d7 (خانات التاريخ)
                 if (input.getAttribute('data-save') === 'd6' || input.getAttribute('data-save') === 'd7') {
-                    // وضع تاريخ اليوم وحفظه فوراً ليحل محل أي بيانات قديمة
                     input.value = today;
                     localStorage.setItem(storageKey, today);
                 } else {
-                    // الخانات الأخرى يتم استرجاعها كالمعتاد
                     const savedVal = localStorage.getItem(storageKey);
                     if (savedVal) {
                         input.value = savedVal;
                     }
                 }
 
-                // حفظ التغييرات عند الكتابة اليدوية (اختياري)
                 input.addEventListener('input', () => {
                     localStorage.setItem(storageKey, input.value);
                 });
             });
-        });        function clearData() { 
+        });
+
+        function clearData() { 
             if(confirm("هل تريد مسح البيانات؟ (سيتم إعادة تعيين التاريخ عند التحديث)")) { 
                 allInputs.forEach(i => { 
                     localStorage.removeItem(pageID+i.getAttribute('data-save')); 
@@ -124,9 +135,9 @@
             } 
         }
 
-        // وظيفة المشاركة
+        // وظيفة المشاركة (مشاركة الصفحة الأولى فقط)
         document.getElementById('shareBtn').addEventListener('click', async function() {
-            const element = document.getElementById('pdf-content');
+            const element = document.getElementById('page1'); // تم التعديل لاستهداف الصفحة الأولى فقط
             const btn = this;
             btn.disabled = true;
             element.classList.add('exporting');
@@ -134,7 +145,7 @@
 
             const opt = {
                 margin: 0,
-                filename: `تقرير_${getTodayDate()}.pdf`,
+                filename: `تقرير_الصفحة_الاولى_${getTodayDate()}.pdf`,
                 image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: { scale: 2, useCORS: true },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
@@ -143,7 +154,7 @@
             try {
                 const worker = html2pdf().set(opt).from(element);
                 const pdfBlob = await worker.output('blob');
-                const file = new File([pdfBlob], "تقرير الفحص.pdf", { type: "application/pdf" });
+                const file = new File([pdfBlob], "تقرير الفحص - الصفحة الأولى.pdf", { type: "application/pdf" });
 
                 if (navigator.canShare && navigator.canShare({ files: [file] })) {
                     await navigator.share({ files: [file], title: 'تقرير الفحص' });
