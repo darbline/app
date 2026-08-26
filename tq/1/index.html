@@ -127,17 +127,25 @@
         // وظيفة المشاركة
         document.getElementById('shareBtn').addEventListener('click', async function() {
             const element = document.getElementById('pdf-content');
-            const btn = this;
-            btn.disabled = true;
+
             element.classList.add('exporting');
-            window.scrollTo(0, 0);
 
             const opt = {
                 margin: 0,
                 filename: `تقرير_${getTodayDate()}.pdf`,
                 image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                html2canvas: { 
+                    scale: 2,           // تحسين الدقة
+                    useCORS: true, 
+                    logging: false,
+                    letterRendering: true,
+                    allowTaint: false,
+                    scrollX: 0,         // منع الإزاحة الجانبية
+                    scrollY: 0,
+                    windowWidth: 794    // تثبيت عرض النافذة أثناء الالتقاط لسفاري
+                },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
             };
 
             try {
