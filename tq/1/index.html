@@ -62,15 +62,6 @@
             }
         }
 
-        /* كلاس لإغلاق التصغير مؤقتاً عند تصدير الـ PDF لمنع انزياح iOS Safari */
-        .pdf-exporting {
-            transform: none !important;
-            margin: 0 !important;
-            position: relative !important;
-            left: 0 !important;
-            top: 0 !important;
-        }
-
         @media print { 
             .toolbar { display: none !important; }
             body { background: white; }
@@ -141,17 +132,43 @@
             } 
         }
 
-        // وظيفة المشاركة المحسنة خصيصاً لأجهزة آيفون iOS
+        // دالة التصدير والمشاركة المعدلة تماماً للتغلب على مشكلة iOS Safari RTL
         document.getElementById('shareBtn').addEventListener('click', async function() {
-            const element = document.getElementById('page1');
-            const pdfContainer = document.getElementById('pdf-content');
             const btn = this;
-            
             btn.disabled = true;
-            element.classList.add('exporting');
-            pdfContainer.classList.add('pdf-exporting'); // إيقاف التجاوب مؤقتاً لتفادي الإزاحة
+
+            const originalElement = document.getElementById('page1');
             
-            window.scrollTo(0, 0);
+            // 1. استنسخ العنصر لمنع أي تأثير من CSS الجوال الحالي
+            const clone = originalElement.cloneNode(true);
+            clone.classList.add('exporting');
+            
+            // 2. مزامنة قيم المدخلات الحالية مع النسخة
+            const origInputs = originalElement.querySelectorAll('input');
+            const cloneInputs = clone.querySelectorAll('input');
+            origInputs.forEach((inp, idx) => {
+                cloneInputs[idx].value = inp.value;
+                cloneInputs[idx].style.border = 'none';
+                cloneInputs[idx].style.background = 'transparent';
+            });
+
+            // 3. إنشاء غلاف مؤقت بأبعاد 794px × 1123px (A4 دقيقة) وخارج الشاشة
+            const container = document.createElement('div');
+            container.style.position = 'fixed';
+            container.style.top = '-9999px';
+            container.style.left = '0';
+            container.style.width = '794px';
+            container.style.height = '1123px';
+            container.style.direction = 'ltr'; // إلغاء محاذاة RTL المؤقتة أثناء التحويل لوقف الإزاحة
+            
+            // ضبط أبعاد النسخة
+            clone.style.width = '794px';
+            clone.style.height = '1123px';
+            clone.style.transform = 'none';
+            clone.style.margin = '0';
+
+            container.appendChild(clone);
+            document.body.appendChild(container);
 
             const opt = {
                 margin: 0,
@@ -160,15 +177,18 @@
                 html2canvas: { 
                     scale: 2, 
                     useCORS: true,
+                    width: 794,
+                    height: 1123,
+                    x: 0,
+                    y: 0,
                     scrollX: 0,
-                    scrollY: 0,
-                    windowWidth: 794 // 210mm تحويل إلى pixels لتثبيت الأبعاد عند التصدير
+                    scrollY: 0
                 },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
 
             try {
-                const worker = html2pdf().set(opt).from(element);
+                const worker = html2pdf().set(opt).from(clone);
                 const pdfBlob = await worker.output('blob');
                 const file = new File([pdfBlob], "تقرير الفحص.pdf", { type: "application/pdf" });
 
@@ -179,10 +199,10 @@
                 }
             } catch (err) {
                 console.error(err);
-                html2pdf().set(opt).from(element).save();
+                await html2pdf().set(opt).from(clone).save();
             } finally {
-                element.classList.remove('exporting');
-                pdfContainer.classList.remove('pdf-exporting'); // إعادة التجاوب بعد الانتهاء
+                // إزالة العنصر المؤقت وإعادة تفعيل الزر
+                document.body.removeChild(container);
                 btn.disabled = false;
             }
         });
