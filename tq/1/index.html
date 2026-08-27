@@ -2,17 +2,27 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"> 
     <title>تقرير الفحص - تاريخ تلقائي</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         * { box-sizing: border-box; -webkit-print-color-adjust: exact; }
+        
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            overflow-x: hidden; /* لمنع المتصفح من إنشاء سحب جانبي يسبب الإزاحة */
+        }
+
         body { 
             background-color: #525659; 
-            margin: 0; padding: 0; 
-            display: flex; flex-direction: column; align-items: center; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
             font-family: 'Arial', sans-serif; 
         }
+
         .toolbar { width: 100%; background: #333; padding: 15px; position: sticky; top: 0; z-index: 1000; text-align: center; }
         .share-btn, .print-btn, .back-btn, .clear-btn { padding: 12px 20px; border: none; border-radius: 50px; cursor: pointer; font-size: 14px; font-weight: bold; margin: 5px; color: white; }
         .share-btn { background: #27ae60; }
@@ -20,6 +30,13 @@
         .back-btn { background: #95a5a6; }
         .clear-btn { background: #c0392b; }
         
+        #pdf-wrapper {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            overflow: hidden;
+        }
+
         #pdf-content { 
             width: 210mm; 
             background: white; 
@@ -49,16 +66,12 @@
         .from-loc { top: 223px; left: 50px; width: 145px; }
         .to-loc { top: 223px; left: 205px; width: 145px; }
 
-        /* تحسين العرض متجاوب للجوال */
+        /* تحسين العرض للجوال بشكل لا يؤثر على زوم المتصفح */
         @media screen and (max-width: 768px) {
-            body {
-                overflow-x: auto;
-                align-items: stretch;
-            }
             #pdf-content {
                 transform-origin: top center;
-                transform: scale(calc(100vw / 220mm));
-                margin: 10px auto;
+                transform: scale(calc((100vw - 20px) / 210mm));
+                margin: 10px 0;
             }
         }
 
@@ -78,10 +91,12 @@
         <button class="back-btn" onclick="window.history.back()">رجوع</button>
     </div>
 
-    <div id="pdf-content">
-        <div class="page" id="page1">
-            <input type="text" id="fromInput" class="from-loc" data-save="d6">
-            <input type="text" id="toInput" class="to-loc" data-save="d7">
+    <div id="pdf-wrapper">
+        <div id="pdf-content">
+            <div class="page" id="page1">
+                <input type="text" id="fromInput" class="from-loc" data-save="d6">
+                <input type="text" id="toInput" class="to-loc" data-save="d7">
+            </div>
         </div>
     </div>
 
@@ -132,18 +147,21 @@
             } 
         }
 
-        // دالة التصدير والمشاركة المعدلة تماماً للتغلب على مشكلة iOS Safari RTL
         document.getElementById('shareBtn').addEventListener('click', async function() {
             const btn = this;
             btn.disabled = true;
 
+            // 1. إجبار المتصفح على التصفير وإلغاء أي تمرير أو زوم يدوي من المستخدم
+            window.scrollTo(0, 0);
+            document.body.scrollTop = 0;
+
             const originalElement = document.getElementById('page1');
             
-            // 1. استنسخ العنصر لمنع أي تأثير من CSS الجوال الحالي
+            // 2. إنشاء نسخة مستقلة تمتاز بخصائص محددة ثابتة كلياً
             const clone = originalElement.cloneNode(true);
             clone.classList.add('exporting');
             
-            // 2. مزامنة قيم المدخلات الحالية مع النسخة
+            // نقل قيم الخانات
             const origInputs = originalElement.querySelectorAll('input');
             const cloneInputs = clone.querySelectorAll('input');
             origInputs.forEach((inp, idx) => {
@@ -152,24 +170,27 @@
                 cloneInputs[idx].style.background = 'transparent';
             });
 
-            // 3. إنشاء غلاف مؤقت بأبعاد 794px × 1123px (A4 دقيقة) وخارج الشاشة
+            // 3. بناء حاوية خفية تفرض الحجم الطبيعي وتمنع تأثر Safari بزوم الجوال
             const container = document.createElement('div');
-            container.style.position = 'fixed';
-            container.style.top = '-9999px';
+            container.style.position = 'absolute';
+            container.style.top = '0';
             container.style.left = '0';
             container.style.width = '794px';
             container.style.height = '1123px';
-            container.style.direction = 'ltr'; // إلغاء محاذاة RTL المؤقتة أثناء التحويل لوقف الإزاحة
+            container.style.zIndex = '-9999';
+            container.style.opacity = '0';
+            container.style.pointerEvents = 'none';
             
-            // ضبط أبعاد النسخة
             clone.style.width = '794px';
             clone.style.height = '1123px';
             clone.style.transform = 'none';
             clone.style.margin = '0';
+            clone.style.position = 'relative';
 
             container.appendChild(clone);
             document.body.appendChild(container);
 
+            // 4. إعدادات التصدير المباشرة
             const opt = {
                 margin: 0,
                 filename: `تقرير_الصفحة_الاولى_${getTodayDate()}.pdf`,
@@ -179,10 +200,11 @@
                     useCORS: true,
                     width: 794,
                     height: 1123,
+                    scrollX: 0,
+                    scrollY: 0,
                     x: 0,
                     y: 0,
-                    scrollX: 0,
-                    scrollY: 0
+                    windowWidth: 794 // محاكاة عرض الشاشة بالكامل كأنك قمت بالتصغير بأصابعك
                 },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
@@ -201,7 +223,6 @@
                 console.error(err);
                 await html2pdf().set(opt).from(clone).save();
             } finally {
-                // إزالة العنصر المؤقت وإعادة تفعيل الزر
                 document.body.removeChild(container);
                 btn.disabled = false;
             }
