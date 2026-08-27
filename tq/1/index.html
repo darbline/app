@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=794, initial-scale=1.0"> 
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
     <title>تقرير الفحص - تاريخ تلقائي</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
@@ -13,7 +13,6 @@
             display: flex; flex-direction: column; align-items: center; 
             font-family: 'Arial', sans-serif; 
         }
-        .header-bg { width: 100%; height: 160px; background: #2c3e50; display: flex; align-items: center; justify-content: center; }
         .toolbar { width: 100%; background: #333; padding: 15px; position: sticky; top: 0; z-index: 1000; text-align: center; }
         .share-btn, .print-btn, .back-btn, .clear-btn { padding: 12px 20px; border: none; border-radius: 50px; cursor: pointer; font-size: 14px; font-weight: bold; margin: 5px; color: white; }
         .share-btn { background: #27ae60; }
@@ -21,13 +20,11 @@
         .back-btn { background: #95a5a6; }
         .clear-btn { background: #c0392b; }
         
-       #pdf-content { 
+        #pdf-content { 
             width: 210mm; 
-            display: block; 
             background: white; 
             padding: 0;
-            margin: 0;
-
+            margin: 20px 0;
         }
 
         .page { 
@@ -52,17 +49,33 @@
         .from-loc { top: 223px; left: 50px; width: 145px; }
         .to-loc { top: 223px; left: 205px; width: 145px; }
 
-         @media print { 
-            .header-bg, .toolbar { display: none !important; }
-            @page { size: A4; margin: 0 !important; } 
-            .page { margin: 0 !important; border: none !important; } 
+        /* تحسين العرض متجاوب للجوال */
+        @media screen and (max-width: 768px) {
+            body {
+                overflow-x: auto;
+                align-items: stretch;
             }
             #pdf-content {
                 transform-origin: top center;
                 transform: scale(calc(100vw / 220mm));
                 margin: 10px auto;
             }
+        }
 
+        /* كلاس لإغلاق التصغير مؤقتاً عند تصدير الـ PDF لمنع انزياح iOS Safari */
+        .pdf-exporting {
+            transform: none !important;
+            margin: 0 !important;
+            position: relative !important;
+            left: 0 !important;
+            top: 0 !important;
+        }
+
+        @media print { 
+            .toolbar { display: none !important; }
+            body { background: white; }
+            #pdf-content { margin: 0; transform: none !important; }
+            @page { size: A4; margin: 0; } 
         }
     </style>
 </head>
@@ -87,7 +100,6 @@
         
         const allInputs = document.querySelectorAll('input[data-save]');
 
-        // دالة للحصول على تاريخ اليوم بتنسيق YYYY-MM-DD
         function getTodayDate() {
             const today = new Date();
             const yyyy = today.getFullYear();
@@ -98,14 +110,12 @@
             return yyyy + '-' + mm + '-' + dd;
         }
 
-        // استرجاع البيانات مع إجبار خانات التاريخ على تاريخ اليوم
         window.addEventListener('load', () => {
             const today = getTodayDate();
             
             allInputs.forEach(input => {
                 const storageKey = pageID + input.getAttribute('data-save');
                 
-                // التحقق مما إذا كانت الخانة هي d6 أو d7 (خانات التاريخ)
                 if (input.getAttribute('data-save') === 'd6' || input.getAttribute('data-save') === 'd7') {
                     input.value = today;
                     localStorage.setItem(storageKey, today);
@@ -129,25 +139,31 @@
                     i.value=''; 
                 }); 
             } 
-        // --- التعديل الجذري لحل مشكلة القص في سفاري وآيفون ---
-        document.getElementById('shareBtn').addEventListener('click', async function() {
-            const element = document.getElementById('pdf-content');
-
         }
 
-        // وظيفة المشاركة (مشاركة الصفحة الأولى فقط)
+        // وظيفة المشاركة المحسنة خصيصاً لأجهزة آيفون iOS
         document.getElementById('shareBtn').addEventListener('click', async function() {
-            const element = document.getElementById('page1'); // تم التعديل لاستهداف الصفحة الأولى فقط
+            const element = document.getElementById('page1');
+            const pdfContainer = document.getElementById('pdf-content');
             const btn = this;
+            
             btn.disabled = true;
             element.classList.add('exporting');
+            pdfContainer.classList.add('pdf-exporting'); // إيقاف التجاوب مؤقتاً لتفادي الإزاحة
+            
             window.scrollTo(0, 0);
 
             const opt = {
                 margin: 0,
-                filename: `تقرير_الفحص_${getTodayDate()}.pdf`,
+                filename: `تقرير_الصفحة_الاولى_${getTodayDate()}.pdf`,
                 image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true },
+                html2canvas: { 
+                    scale: 2, 
+                    useCORS: true,
+                    scrollX: 0,
+                    scrollY: 0,
+                    windowWidth: 794 // 210mm تحويل إلى pixels لتثبيت الأبعاد عند التصدير
+                },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
 
@@ -162,9 +178,11 @@
                     await worker.save();
                 }
             } catch (err) {
+                console.error(err);
                 html2pdf().set(opt).from(element).save();
             } finally {
                 element.classList.remove('exporting');
+                pdfContainer.classList.remove('pdf-exporting'); // إعادة التجاوب بعد الانتهاء
                 btn.disabled = false;
             }
         });
