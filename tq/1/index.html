@@ -13,6 +13,7 @@
             display: flex; flex-direction: column; align-items: center; 
             font-family: 'Arial', sans-serif; 
         }
+        .header-bg { width: 100%; height: 160px; background: #2c3e50; display: flex; align-items: center; justify-content: center; }
         .toolbar { width: 100%; background: #333; padding: 15px; position: sticky; top: 0; z-index: 1000; text-align: center; }
         .share-btn, .print-btn, .back-btn, .clear-btn { padding: 12px 20px; border: none; border-radius: 50px; cursor: pointer; font-size: 14px; font-weight: bold; margin: 5px; color: white; }
         .share-btn { background: #27ae60; }
@@ -20,11 +21,13 @@
         .back-btn { background: #95a5a6; }
         .clear-btn { background: #c0392b; }
         
-        #pdf-content { 
+       #pdf-content { 
             width: 210mm; 
+            display: block; 
             background: white; 
             padding: 0;
-            margin: 20px 0;
+            margin: 0;
+
         }
 
         .page { 
@@ -49,24 +52,17 @@
         .from-loc { top: 223px; left: 50px; width: 145px; }
         .to-loc { top: 223px; left: 205px; width: 145px; }
 
-        /* تحسين العرض متجاوب للجوال */
-        @media screen and (max-width: 768px) {
-            body {
-                overflow-x: auto;
-                align-items: stretch;
+         @media print { 
+            .header-bg, .toolbar { display: none !important; }
+            @page { size: A4; margin: 0 !important; } 
+            .page { margin: 0 !important; border: none !important; } 
             }
             #pdf-content {
                 transform-origin: top center;
                 transform: scale(calc(100vw / 220mm));
                 margin: 10px auto;
             }
-        }
 
-        @media print { 
-            .toolbar { display: none !important; }
-            body { background: white; }
-            #pdf-content { margin: 0; transform: none !important; }
-            @page { size: A4; margin: 0; } 
         }
     </style>
 </head>
@@ -133,6 +129,10 @@
                     i.value=''; 
                 }); 
             } 
+        // --- التعديل الجذري لحل مشكلة القص في سفاري وآيفون ---
+        document.getElementById('shareBtn').addEventListener('click', async function() {
+            const element = document.getElementById('pdf-content');
+
         }
 
         // وظيفة المشاركة (مشاركة الصفحة الأولى فقط)
@@ -145,7 +145,7 @@
 
             const opt = {
                 margin: 0,
-                filename: `تقرير_الصفحة_الاولى_${getTodayDate()}.pdf`,
+                filename: `تقرير_الفحص_${getTodayDate()}.pdf`,
                 image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: { scale: 2, useCORS: true },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
