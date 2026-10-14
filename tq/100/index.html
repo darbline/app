@@ -126,7 +126,6 @@
             margin-bottom: 2px;
         }
 
-        
         /* هذا الجزء مهم جداً لسفاري: جعل الحاوية مطابقة تماماً لمقاس A4 */
         #pdf-content { 
             width: 210mm; 
@@ -135,7 +134,6 @@
             padding: 0;
             margin: 0;
         }
-
 
         .page { 
             width: 210mm; 
@@ -155,9 +153,16 @@
         input { position: absolute; background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(0,0,0,0.1); font-size: 15px; text-align: center; outline: none; color: black; }
         .exporting input { border: none !important; background: transparent !important; }
 
-        /* تموضع الخانات */
+        /* تموضع الخانات الموجودة مسبقاً */
         .from-loc { top: 223px; left: 50px; width: 145px; }
         .to-loc { top: 223px; left: 205px; width: 145px; }
+
+        /* ------------------------------------------------ */
+        /* مواقع الخانات الجديدة (يمكنك تعديل top و left لتناسب خلفيتك) */
+        /* ------------------------------------------------ */
+        .driver-top { top: 223px; right: 50px; width: 220px; }      /* اسم السائق فوق */
+        .plate-num { top: 223px; left: 360px; width: 160px; }       /* لوحة المركبة */
+        .driver-bottom { top: 860px; right: 80px; width: 220px; }   /* اسم السائق تحت */
 
         @media print { 
             .header-bg, .toolbar { display: none !important; }
@@ -203,8 +208,16 @@
 
     <div id="pdf-content">
         <div class="page" id="page1">
+            <!-- الخانات الجديدة -->
+            <input type="text" id="driverTopInput" class="driver-top" data-save="driver_top" placeholder="اسم السائق">
+            <input type="text" id="plateInput" class="plate-num" data-save="plate_num" placeholder="رقم اللوحة">
+
+            <!-- الخانات القديمة -->
             <input type="text" id="fromInput" class="from-loc" data-save="d6">
             <input type="text" id="toInput" class="to-loc" data-save="d7">
+
+            <!-- خانة اسم السائق في الأسفل -->
+            <input type="text" id="driverBottomInput" class="driver-bottom" data-save="driver_bottom" placeholder="توقيع/اسم السائق">
         </div>
     </div>
 
