@@ -158,11 +158,11 @@
         .to-loc { top: 223px; left: 205px; width: 145px; }
 
         /* ------------------------------------------------ */
-        /* مواقع الخانات الجديدة (يمكنك تعديل top و left لتناسب خلفيتك) */
+        /* مواقع الخانات الجديدة */
         /* ------------------------------------------------ */
         .driver-top { top: 223px; right: 50px; width: 220px; }      /* اسم السائق فوق */
         .plate-num { top: 223px; left: 360px; width: 160px; }       /* لوحة المركبة */
-        .driver-bottom { top: 860px; right: 80px; width: 220px; }   /* اسم السائق تحت */
+        .driver-bottom { top: 860px; right: 80px; width: 220px; background: rgba(235, 235, 235, 0.4); }   /* اسم السائق تحت (للقراءة فقط) */
 
         @media print { 
             .header-bg, .toolbar { display: none !important; }
@@ -216,8 +216,8 @@
             <input type="text" id="fromInput" class="from-loc" data-save="d6">
             <input type="text" id="toInput" class="to-loc" data-save="d7">
 
-            <!-- خانة اسم السائق في الأسفل -->
-            <input type="text" id="driverBottomInput" class="driver-bottom" data-save="driver_bottom" placeholder="توقيع/اسم السائق">
+            <!-- خانة اسم السائق في الأسفل (تم تحويلها لـ readonly ومزامنتها تلقائياً) -->
+            <input type="text" id="driverBottomInput" class="driver-bottom" data-save="driver_bottom" placeholder="توقيع/اسم السائق" readonly>
         </div>
     </div>
 
@@ -247,6 +247,8 @@
         let pageID = path.includes('/100/') ? "D100_" : (path.includes('/101/') ? "D101_" : "D102_");
         
         const allInputs = document.querySelectorAll('input[data-save]');
+        const driverTopInput = document.getElementById('driverTopInput');
+        const driverBottomInput = document.getElementById('driverBottomInput');
 
         // دالة للحصول على تاريخ اليوم بتنسيق YYYY-MM-DD
         function getTodayDate() {
@@ -259,7 +261,15 @@
             return yyyy + '-' + mm + '-' + dd;
         }
 
-        // استرجاع البيانات مع إجبار خانات التاريخ على تاريخ اليوم
+        // دالة لمزامنة حقل اسم السائق السفلي مع العلوي
+        function syncDriverName() {
+            const val = driverTopInput.value;
+            driverBottomInput.value = val;
+            const bottomStorageKey = pageID + driverBottomInput.getAttribute('data-save');
+            localStorage.setItem(bottomStorageKey, val);
+        }
+
+        // استرجع البيانات مع إجبار خانات التاريخ على تاريخ اليوم ومزامنة اسم السائق
         window.addEventListener('load', () => {
             const today = getTodayDate();
             
@@ -281,6 +291,12 @@
                     localStorage.setItem(storageKey, input.value);
                 });
             });
+
+            // ربط حدث الكتابة في اسم السائق العلوي بالمزامنة التلقائية مع السفلي
+            driverTopInput.addEventListener('input', syncDriverName);
+
+            // تأكيد المزامنة عند التحميل إذا كان هناك اسم محفوظ مسبقاً
+            syncDriverName();
         });
 
         function clearData() { 
