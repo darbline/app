@@ -95,8 +95,15 @@
         input { position: absolute; background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(0,0,0,0.1); font-size: 15px; text-align: center; outline: none; color: black; }
         .exporting input { border: none !important; background: transparent !important; }
 
-        /* تموضع الخانات (نفس إحداثياتك) */
-        .inp-date-top { top: 358px; left: 55px; width: 130px; }
+/* تموضع الخانات وتعديل خصائص خانة التاريخ لتبدو مصغرة العرض ولكن بخط عريض وبارز */
+        .inp-date-top { 
+            top: 358px; 
+            left: 45px; 
+            width: 155px; 
+            font-size: 13.5px;     /* تصغير حجم الخط ليتناسب مع المساحة */
+            font-weight: bold;    /* جعله عريضاً (ضخماً) */
+        }
+
         .plate-num { top: 425px; left: 210px; width: 120px; }
         .driver-name { top: 425px; left: 343px; width: 190px; }
         .id-num { top: 425px; left: 542px; width: 110px; }
@@ -176,19 +183,38 @@
         container.innerHTML = rowsHtml;
 
         const allInputs = document.querySelectorAll('input[data-save]');
- // دالة التاريخ: قمت بتغيير الترتيب هنا ليصبح (يوم - شهر - سنة)
-        function applyTodayDate() {
-            const dateInput = document.getElementById('todayDate');
-            const today = new Date();
-            const dd = String(today.getDate()).padStart(2, '0');
-            const mm = String(today.getMonth() + 1).padStart(2, '0');
-            const yyyy = today.getFullYear();
-            
-            // الترتيب: يوم-شهر-سنة
-            const dateString = yyyy + '-' + mm + '-' + dd;
-            
-            dateInput.value = dateString;
-            localStorage.setItem(pageID + "d1", dateString);
+// دالة التاريخ (الهجري • الميلادي) باستخدام فاصل النقطة المركزية
+function applyTodayDate() {
+    const dateInput = document.getElementById('todayDate');
+    const today = new Date();
+    
+    // التاريخ الميلادي
+    const dd = String(today.getDate()).padStart(2, '0');
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const yyyy = today.getFullYear();
+    const gregorianDate = yyyy + '-' + mm + '-' + dd;
+
+    // التاريخ الهجري (أم القرى)
+    let hijriDate = "";
+    try {
+        const options = { calendar: 'islamic-umalqura', year: 'numeric', month: '2-digit', day: '2-digit' };
+        const formatter = new Intl.DateTimeFormat('en-US-u-ca-islamic-umalqura', options);
+        const parts = formatter.formatToParts(today);
+        
+        let hYear = parts.find(p => p.type === 'year')?.value || '';
+        let hMonth = parts.find(p => p.type === 'month')?.value || '';
+        let hDay = parts.find(p => p.type === 'day')?.value || '';
+        
+        hijriDate = `${hYear}-${hMonth}-${hDay}`;
+    } catch (e) {
+        hijriDate = "";
+    }
+
+    // الدمج بالفاصل الاحترافي النقطة المركزية (•)
+    const finalDateString = hijriDate ? `${hijriDate} • ${gregorianDate}` : gregorianDate;
+    
+    dateInput.value = finalDateString;
+    localStorage.setItem(pageID + "d1", finalDateString);
         }
 
         // حفظ البيانات
