@@ -92,46 +92,12 @@
         #page3 { background-image: url('0003.jpg'); }
         #page4 { background-image: url('0004.jpg'); }
 
-        input, textarea { position: absolute; background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(0,0,0,0.1); font-size: 15px; text-align: center; outline: none; color: black; resize: none; }
-        .exporting input, .exporting textarea { border: none !important; background: transparent !important; }
+        input { position: absolute; background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(0,0,0,0.1); font-size: 15px; text-align: center; outline: none; color: black; }
+        .exporting input { border: none !important; background: transparent !important; }
 
-        /* تنسيق خانة التاريخ الأصلية (قابلة للتعديل والمسح) */
-        .inp-date-top {  
-            top: 349px;  
-            left: 45px;  
-            width: 155px;  
-            height: 38px;          
-            font-size: 13px;       
-            font-weight: bold;     
-            line-height: 1.25;     
-            padding-top: 2px;
-            white-space: pre-wrap;
-            overflow: hidden;
-        }
-
-        /* تنسيق البديل الخفي الذي يظهر فقط أثناء التصدير لضمان انتظام السطرين */
-        #pdfDateWrapper {
-            position: absolute;
-            top: 349px;  
-            left: 45px;  
-            width: 155px;  
-            height: 38px;
-            display: none; /* مخفي في العرض العادي */
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            font-size: 13px;
-            font-weight: bold;
-            color: black;
-            background: transparent;
-        }
-        #pdfDateWrapper span {
-            display: block;
-            line-height: 1.2;
-            width: 100%;
-            text-align: center;
-        }
-
+        /* تموضع الخانات */
+                .inp-date2-top { top: 349px; left: 55px; width: 130px; }
+        .inp-date-top { top: 365px; left: 55px; width: 130px; }
         .plate-num { top: 425px; left: 210px; width: 120px; }
         .driver-name { top: 425px; left: 343px; width: 190px; }
         .id-num { top: 425px; left: 542px; width: 110px; }
@@ -142,10 +108,10 @@
         .col-nat { left: 285px; width: 120px; }
         .col-passport { left: 55px; width: 220px; }
 
-        @media print {  
+        @media print { 
             .header-bg, .toolbar { display: none !important; }
-            @page { size: A4; margin: 0 !important; }  
-            .page { margin: 0 !important; border: none !important; }  
+            @page { size: A4; margin: 0 !important; } 
+            .page { margin: 0 !important; border: none !important; } 
         }
     </style>
 </head>
@@ -184,15 +150,8 @@
 
     <div id="pdf-content">
         <div class="page" id="page1">
-            <!-- خانة التاريخ الأصلية للتعديل والمسح -->
-            <textarea id="todayDate" class="inp-date-top" data-save="d1"></textarea>
-            
-            <!-- حاوية بديلة تظهر حصرياً أثناء التصدير لضمان ثبات السطرين فوق بعضهما -->
-            <div id="pdfDateWrapper">
-                <span id="pdfHijriLine"></span>
-                <span id="pdfGregorianLine"></span>
-            </div>
-
+            <input type="text" id="todayDate" class="inp-date-top" data-save="d1">
+            <input type="text" id="todayDate2" class="inp-date2-top" data-save="d2">
             <input type="text" class="from-loc" data-save="d6">
             <input type="text" class="to-loc" data-save="d7">
             <div id="passenger-inputs"></div>
@@ -217,19 +176,27 @@
         }
         container.innerHTML = rowsHtml;
 
-        const allInputs = document.querySelectorAll('input[data-save], textarea[data-save]');
+        const allInputs = document.querySelectorAll('input[data-save]');
 
-        // دالة التاريخ التلقائي
+        // دالة التاريخ الميلادي (يوم-شهر-سنة أو سنة-شهر-يوم حسب رغبتك)
         function applyTodayDate() {
             const dateInput = document.getElementById('todayDate');
-            if (localStorage.getItem(pageID + "d1")) return;
-
             const today = new Date();
             const dd = String(today.getDate()).padStart(2, '0');
             const mm = String(today.getMonth() + 1).padStart(2, '0');
             const yyyy = today.getFullYear();
-            const gregorianDate = yyyy + '-' + mm + '-' + dd;
+            
+            const dateString = yyyy + '-' + mm + '-' + dd;
+            if(dateInput) {
+                dateInput.value = dateString;
+                localStorage.setItem(pageID + "d1", dateString);
+            }
+        } 
 
+        // دالة التاريخ الهجري
+        function applyTodayDate2() {
+            const dateInput2 = document.getElementById('todayDate2');
+            const today = new Date();
             let hijriDate = "";
             try {
                 const options = { calendar: 'islamic-umalqura', year: 'numeric', month: '2-digit', day: '2-digit' };
@@ -243,13 +210,14 @@
                 hijriDate = `${hYear}-${hMonth}-${hDay}`;
             } catch (e) {
                 hijriDate = "";
+            }     
+            if(dateInput2) {
+                dateInput2.value = hijriDate;
+                localStorage.setItem(pageID + "d2", hijriDate);
             }
-
-            const finalDateString = hijriDate ? `${hijriDate}\n${gregorianDate}` : gregorianDate;
-            dateInput.value = finalDateString;
-            localStorage.setItem(pageID + "d1", finalDateString);
         }
 
+        // حفظ البيانات
         allInputs.forEach(input => {
             input.addEventListener('input', () => localStorage.setItem(pageID + input.getAttribute('data-save'), input.value));
         });
@@ -259,17 +227,21 @@
                 const val = localStorage.getItem(pageID + input.getAttribute('data-save'));
                 if (val) input.value = val;
             });
+            // وضع التواريخ الحالية
             applyTodayDate();
+            applyTodayDate2();
         });
 
         function clearData() { 
-            if(confirm("مسح جميع البيانات؟")) { 
-                allInputs.forEach(i => { localStorage.removeItem(pageID+i.getAttribute('data-save')); i.value=''; }); 
-                applyTodayDate(); 
+            if(confirm("هل تريد مسح البيانات؟")) { 
+                allInputs.forEach(i => { 
+                    localStorage.removeItem(pageID + i.getAttribute('data-save')); 
+                    i.value = ''; 
+                }); 
             } 
         }
 
-        // --- نسخ بيانات الركاب ---
+        // --- ميزة نسخ بيانات الركاب ---
         document.getElementById('copyBtn').addEventListener('click', function() {
             let passengersData = [];
             for (let i = 0; i < 16; i++) {
@@ -291,7 +263,7 @@
             alert(`تم نسخ بيانات ${passengersData.length} راكب بنجاح!`);
         });
 
-        // --- لصق بيانات الركاب ---
+        // --- ميزة لصق بيانات الركاب ---
         document.getElementById('pasteBtn').addEventListener('click', function() {
             let savedData = localStorage.getItem("copied_passengers");
             if (!savedData) {
@@ -301,6 +273,7 @@
 
             let passengersData = JSON.parse(savedData);
             
+            // تفريغ خانات الركاب الحالية أولاً وحذفها من التخزين المحلي
             for (let i = 0; i < 16; i++) {
                 let nameInput = document.querySelector(`input[data-save="n${i}"]`);
                 let natInput = document.querySelector(`input[data-save="nat${i}"]`);
@@ -315,6 +288,7 @@
                 localStorage.removeItem(pageID + `p${i}`);
             }
 
+            // لصق البيانات الجديدة بالترتيب وتخزينها
             passengersData.forEach((passenger, i) => {
                 if (i < 16) {
                     let nameInput = document.querySelector(`input[data-save="n${i}"]`);
@@ -334,36 +308,11 @@
             alert("تم لصق بيانات الركاب بنجاح!");
         });
 
-        // --- دالة تحضير التاريخ للتصدير (فصل السطرين لضمان ظهورهما فوق بعض) ---
-        function prepareDateForExport() {
-            const dateValue = document.getElementById('todayDate').value;
-            const lines = dateValue.split('\n');
-            
-            const pdfDateWrapper = document.getElementById('pdfDateWrapper');
-            const pdfHijriLine = document.getElementById('pdfHijriLine');
-            const pdfGregorianLine = document.getElementById('pdfGregorianLine');
-
-            pdfHijriLine.textContent = lines[0] || '';
-            pdfGregorianLine.textContent = lines[1] || '';
-
-            // إخفاء الـ textarea وإظهار البديل المنظم
-            document.getElementById('todayDate').style.display = 'none';
-            pdfDateWrapper.style.display = 'flex';
-        }
-
-        // --- استعادة التاريخ بعد التصدير ---
-        function restoreDateAfterExport() {
-            document.getElementById('todayDate').style.display = 'block';
-            document.getElementById('pdfDateWrapper').style.display = 'none';
-        }
-
-        // --- تصدير الـ PDF ومشاركة واتساب ---
+        // --- التعديل الجذري لحل مشكلة القص في سفاري وآيفون ---
         document.getElementById('shareBtn').addEventListener('click', async function() {
             const element = document.getElementById('pdf-content');
             
-            // تجهيز التاريخ والتصميم للتصدير
             element.classList.add('exporting');
-            prepareDateForExport();
             
             const opt = {
                 margin: 0,
@@ -375,7 +324,7 @@
                     logging: false,
                     letterRendering: true,
                     allowTaint: false,
-                    scrollX: 0,          
+                    scrollX: 0,         
                     scrollY: 0,
                     windowWidth: 794    
                 },
@@ -405,16 +354,10 @@
                 html2pdf().set(opt).from(element).save();
             } finally {
                 element.classList.remove('exporting');
-                restoreDateAfterExport(); // استعادة الشكل الطبيعي
             }
         });
 
-        // --- الطباعة العادية ---
-        document.getElementById('printBtn').addEventListener('click', () => {
-            prepareDateForExport();
-            window.print();
-            restoreDateAfterExport();
-        });
+        document.getElementById('printBtn').addEventListener('click', () => window.print());
     </script>
 </body>
 </html>
