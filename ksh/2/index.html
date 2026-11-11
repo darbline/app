@@ -95,14 +95,9 @@
         input { position: absolute; background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(0,0,0,0.1); font-size: 15px; text-align: center; outline: none; color: black; }
         .exporting input { border: none !important; background: transparent !important; }
 
-/* تموضع الخانات وتعديل خصائص خانة التاريخ لتبدو مصغرة العرض ولكن بخط عريض وبارز */
-        .inp-date-top { 
-            top: 358px; 
-            left: 45px; 
-            width: 155px; 
-            font-size: 11.5px;     /* تصغير حجم الخط ليتناسب مع المساحة */
-            font-weight: bold;    /* جعله عريضاً (ضخماً) */
-        }
+        /* تموضع الخانات */
+                .inp-date2-top { top: 349px; left: 55px; width: 130px; }
+        .inp-date-top { top: 365px; left: 55px; width: 130px; }
         .plate-num { top: 425px; left: 210px; width: 120px; }
         .driver-name { top: 425px; left: 343px; width: 190px; }
         .id-num { top: 425px; left: 542px; width: 110px; }
@@ -123,7 +118,6 @@
 <body>
     <div class="toolbar">
         <button id="shareBtn" class="share-btn">
-
             <!-- أيقونة تطبيق الواتساب الرسمية -->
             <svg class="whatsapp-icon-img" viewBox="0 0 32 32">
                 <circle cx="16" cy="16" r="16" fill="#25D366"/>
@@ -156,7 +150,8 @@
 
     <div id="pdf-content">
         <div class="page" id="page1">
-                    <input type="text" id="todayDate" class="inp-date-top" data-save="d1">
+            <input type="text" id="todayDate" class="inp-date-top" data-save="d1">
+            <input type="text" id="todayDate2" class="inp-date2-top" data-save="d2">
             <input type="text" class="from-loc" data-save="d6">
             <input type="text" class="to-loc" data-save="d7">
             <div id="passenger-inputs"></div>
@@ -167,7 +162,7 @@
     </div>
 
     <script>
-        // --- إعداد الهوية وتوليد الخانات (نفس الكود السابق) ---
+        // --- إعداد الهوية وتوليد الخانات ---
         const path = window.location.pathname;
         let pageID = path.includes('/1/') ? "D1_" : (path.includes('/2/') ? "D2_" : "D3_");
         
@@ -182,55 +177,70 @@
         container.innerHTML = rowsHtml;
 
         const allInputs = document.querySelectorAll('input[data-save]');
-// دالة التاريخ (الهجري • الميلادي) باستخدام فاصل النقطة المركزية
-function applyTodayDate() {
-    const dateInput = document.getElementById('todayDate');
-    const today = new Date();
-    
-    // التاريخ الميلادي
-    const dd = String(today.getDate()).padStart(2, '0');
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const yyyy = today.getFullYear();
-    const gregorianDate = yyyy + '-' + mm + '-' + dd;
 
-    // التاريخ الهجري (أم القرى)
-    let hijriDate = "";
-    try {
-        const options = { calendar: 'islamic-umalqura', year: 'numeric', month: '2-digit', day: '2-digit' };
-        const formatter = new Intl.DateTimeFormat('en-US-u-ca-islamic-umalqura', options);
-        const parts = formatter.formatToParts(today);
-        
-        let hYear = parts.find(p => p.type === 'year')?.value || '';
-        let hMonth = parts.find(p => p.type === 'month')?.value || '';
-        let hDay = parts.find(p => p.type === 'day')?.value || '';
-        
-        hijriDate = `${hYear}-${hMonth}-${hDay}`;
-    } catch (e) {
-        hijriDate = "";
-    }
+        // دالة التاريخ الميلادي (يوم-شهر-سنة أو سنة-شهر-يوم حسب رغبتك)
+        function applyTodayDate() {
+            const dateInput = document.getElementById('todayDate');
+            const today = new Date();
+            const dd = String(today.getDate()).padStart(2, '0');
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const yyyy = today.getFullYear();
+            
+            const dateString = yyyy + '-' + mm + '-' + dd;
+            if(dateInput) {
+                dateInput.value = dateString;
+                localStorage.setItem(pageID + "d1", dateString);
+            }
+        } 
 
-    // الدمج بالفاصل الاحترافي النقطة المركزية (•)
-    const finalDateString = hijriDate ? `${hijriDate} • ${gregorianDate}` : gregorianDate;
-    
-    dateInput.value = finalDateString;
-    localStorage.setItem(pageID + "d1", finalDateString);
+        // دالة التاريخ الهجري
+        function applyTodayDate2() {
+            const dateInput2 = document.getElementById('todayDate2');
+            const today = new Date();
+            let hijriDate = "";
+            try {
+                const options = { calendar: 'islamic-umalqura', year: 'numeric', month: '2-digit', day: '2-digit' };
+                const formatter = new Intl.DateTimeFormat('en-US-u-ca-islamic-umalqura', options);
+                const parts = formatter.formatToParts(today);
+                
+                let hYear = parts.find(p => p.type === 'year')?.value || '';
+                let hMonth = parts.find(p => p.type === 'month')?.value || '';
+                let hDay = parts.find(p => p.type === 'day')?.value || '';
+                
+                hijriDate = `${hYear}-${hMonth}-${hDay}`;
+            } catch (e) {
+                hijriDate = "";
+            }     
+            if(dateInput2) {
+                dateInput2.value = hijriDate;
+                localStorage.setItem(pageID + "d2", hijriDate);
+            }
         }
 
         // حفظ البيانات
-
         allInputs.forEach(input => {
             input.addEventListener('input', () => localStorage.setItem(pageID + input.getAttribute('data-save'), input.value));
         });
+
         window.addEventListener('load', () => {
             allInputs.forEach(input => {
                 const val = localStorage.getItem(pageID + input.getAttribute('data-save'));
                 if (val) input.value = val;
             });
-            // وضع التاريخ الحالي دائماً
+            // وضع التواريخ الحالية
             applyTodayDate();
+            applyTodayDate2();
         });
 
-        function clearData() { if(confirm("مسح؟")) { allInputs.forEach(i => { localStorage.removeItem(pageID+i.getAttribute('data-save')); i.value=''; }); } }
+        function clearData() { 
+            if(confirm("هل تريد مسح البيانات؟")) { 
+                allInputs.forEach(i => { 
+                    localStorage.removeItem(pageID + i.getAttribute('data-save')); 
+                    i.value = ''; 
+                }); 
+            } 
+        }
+
         // --- ميزة نسخ بيانات الركاب ---
         document.getElementById('copyBtn').addEventListener('click', function() {
             let passengersData = [];
@@ -298,36 +308,31 @@ function applyTodayDate() {
             alert("تم لصق بيانات الركاب بنجاح!");
         });
 
-
-
         // --- التعديل الجذري لحل مشكلة القص في سفاري وآيفون ---
         document.getElementById('shareBtn').addEventListener('click', async function() {
             const element = document.getElementById('pdf-content');
             
-            // 1. إضافة كلاس التصدير
             element.classList.add('exporting');
             
-            // 2. إعدادات خاصة جداً لسفاري
             const opt = {
                 margin: 0,
                 filename: 'كشف_الركاب.pdf',
                 image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: { 
-                    scale: 2,           // تحسين الدقة
+                    scale: 2,           
                     useCORS: true, 
                     logging: false,
                     letterRendering: true,
                     allowTaint: false,
-                    scrollX: 0,         // منع الإزاحة الجانبية
+                    scrollX: 0,         
                     scrollY: 0,
-                    windowWidth: 794    // تثبيت عرض النافذة أثناء الالتقاط لسفاري
+                    windowWidth: 794    
                 },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
                 pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
             };
 
             try {
-                // إجبار المتصفح على العودة لأعلى الصفحة قبل البدء (مهم لسفاري)
                 window.scrollTo(0, 0);
                 
                 const pdfWorker = html2pdf().set(opt).from(element);
