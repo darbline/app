@@ -95,18 +95,41 @@
         input, textarea { position: absolute; background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(0,0,0,0.1); font-size: 15px; text-align: center; outline: none; color: black; resize: none; }
         .exporting input, .exporting textarea { border: none !important; background: transparent !important; }
 
-        /* تعديل خانة التاريخ لتكون textarea قابلة للتعديل والمسح مع ثبات السطرين */
+        /* تنسيق خانة التاريخ الأصلية (قابلة للتعديل والمسح) */
         .inp-date-top {  
             top: 349px;  
             left: 45px;  
             width: 155px;  
-            height: 38px;          /* ارتفاع كافي لسطرين */
-            font-size: 13px;       /* حجم خط مناسب تماماً لسطرين */
-            font-weight: bold;     /* خط عريض */
-            line-height: 1.25;     /* مسافة دقيقة ومثالية بين السطرين لمنع التداخل */
+            height: 38px;          
+            font-size: 13px;       
+            font-weight: bold;     
+            line-height: 1.25;     
             padding-top: 2px;
             white-space: pre-wrap;
             overflow: hidden;
+        }
+
+        /* تنسيق البديل الخفي الذي يظهر فقط أثناء التصدير لضمان انتظام السطرين */
+        #pdfDateWrapper {
+            position: absolute;
+            top: 349px;  
+            left: 45px;  
+            width: 155px;  
+            height: 38px;
+            display: none; /* مخفي في العرض العادي */
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: bold;
+            color: black;
+            background: transparent;
+        }
+        #pdfDateWrapper span {
+            display: block;
+            line-height: 1.2;
+            width: 100%;
+            text-align: center;
         }
 
         .plate-num { top: 425px; left: 210px; width: 120px; }
@@ -161,8 +184,15 @@
 
     <div id="pdf-content">
         <div class="page" id="page1">
-            <!-- إعادة عنصر textarea مع خصائص منسقة تمنع التداخل وتحافظ على التعديل -->
+            <!-- خانة التاريخ الأصلية للتعديل والمسح -->
             <textarea id="todayDate" class="inp-date-top" data-save="d1"></textarea>
+            
+            <!-- حاوية بديلة تظهر حصرياً أثناء التصدير لضمان ثبات السطرين فوق بعضهما -->
+            <div id="pdfDateWrapper">
+                <span id="pdfHijriLine"></span>
+                <span id="pdfGregorianLine"></span>
+            </div>
+
             <input type="text" class="from-loc" data-save="d6">
             <input type="text" class="to-loc" data-save="d7">
             <div id="passenger-inputs"></div>
@@ -189,22 +219,17 @@
 
         const allInputs = document.querySelectorAll('input[data-save], textarea[data-save]');
 
-        // دالة التاريخ: الهجري في السطر العلوي والميلادي في السطر السفلي
+        // دالة التاريخ التلقائي
         function applyTodayDate() {
             const dateInput = document.getElementById('todayDate');
-            
-            // إذا كان المستخدم قد عدل التاريخ مسبقاً وحفظه، لا تقم بالكتابة فوقه تلقائياً
             if (localStorage.getItem(pageID + "d1")) return;
 
             const today = new Date();
-            
-            // التاريخ الميلادي
             const dd = String(today.getDate()).padStart(2, '0');
             const mm = String(today.getMonth() + 1).padStart(2, '0');
             const yyyy = today.getFullYear();
             const gregorianDate = yyyy + '-' + mm + '-' + dd;
 
-            // التاريخ الهجري (أم القرى)
             let hijriDate = "";
             try {
                 const options = { calendar: 'islamic-umalqura', year: 'numeric', month: '2-digit', day: '2-digit' };
@@ -221,12 +246,10 @@
             }
 
             const finalDateString = hijriDate ? `${hijriDate}\n${gregorianDate}` : gregorianDate;
-            
             dateInput.value = finalDateString;
             localStorage.setItem(pageID + "d1", finalDateString);
         }
 
-        // حفظ البيانات عند التعديل اليدوي
         allInputs.forEach(input => {
             input.addEventListener('input', () => localStorage.setItem(pageID + input.getAttribute('data-save'), input.value));
         });
@@ -236,18 +259,17 @@
                 const val = localStorage.getItem(pageID + input.getAttribute('data-save'));
                 if (val) input.value = val;
             });
-            // وضع التاريخ الحالي إذا لم يكن محفوظاً مسبقاً
             applyTodayDate();
         });
 
         function clearData() { 
             if(confirm("مسح جميع البيانات؟")) { 
                 allInputs.forEach(i => { localStorage.removeItem(pageID+i.getAttribute('data-save')); i.value=''; }); 
-                applyTodayDate(); // إعادة ضبط تاريخ اليوم بعد المسح
+                applyTodayDate(); 
             } 
         }
 
-        // --- ميزة نسخ بيانات الركاب ---
+        // --- نسخ بيانات الركاب ---
         document.getElementById('copyBtn').addEventListener('click', function() {
             let passengersData = [];
             for (let i = 0; i < 16; i++) {
@@ -269,7 +291,7 @@
             alert(`تم نسخ بيانات ${passengersData.length} راكب بنجاح!`);
         });
 
-        // --- ميزة لصق بيانات الركاب ---
+        // --- لصق بيانات الركاب ---
         document.getElementById('pasteBtn').addEventListener('click', function() {
             let savedData = localStorage.getItem("copied_passengers");
             if (!savedData) {
@@ -312,11 +334,36 @@
             alert("تم لصق بيانات الركاب بنجاح!");
         });
 
+        // --- دالة تحضير التاريخ للتصدير (فصل السطرين لضمان ظهورهما فوق بعض) ---
+        function prepareDateForExport() {
+            const dateValue = document.getElementById('todayDate').value;
+            const lines = dateValue.split('\n');
+            
+            const pdfDateWrapper = document.getElementById('pdfDateWrapper');
+            const pdfHijriLine = document.getElementById('pdfHijriLine');
+            const pdfGregorianLine = document.getElementById('pdfGregorianLine');
+
+            pdfHijriLine.textContent = lines[0] || '';
+            pdfGregorianLine.textContent = lines[1] || '';
+
+            // إخفاء الـ textarea وإظهار البديل المنظم
+            document.getElementById('todayDate').style.display = 'none';
+            pdfDateWrapper.style.display = 'flex';
+        }
+
+        // --- استعادة التاريخ بعد التصدير ---
+        function restoreDateAfterExport() {
+            document.getElementById('todayDate').style.display = 'block';
+            document.getElementById('pdfDateWrapper').style.display = 'none';
+        }
+
         // --- تصدير الـ PDF ومشاركة واتساب ---
         document.getElementById('shareBtn').addEventListener('click', async function() {
             const element = document.getElementById('pdf-content');
             
+            // تجهيز التاريخ والتصميم للتصدير
             element.classList.add('exporting');
+            prepareDateForExport();
             
             const opt = {
                 margin: 0,
@@ -358,10 +405,16 @@
                 html2pdf().set(opt).from(element).save();
             } finally {
                 element.classList.remove('exporting');
+                restoreDateAfterExport(); // استعادة الشكل الطبيعي
             }
         });
 
-        document.getElementById('printBtn').addEventListener('click', () => window.print());
+        // --- الطباعة العادية ---
+        document.getElementById('printBtn').addEventListener('click', () => {
+            prepareDateForExport();
+            window.print();
+            restoreDateAfterExport();
+        });
     </script>
 </body>
 </html>
