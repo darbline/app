@@ -95,17 +95,20 @@
         input, textarea { position: absolute; background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(0,0,0,0.1); font-size: 15px; text-align: center; outline: none; color: black; resize: none; }
         .exporting input, .exporting textarea { border: none !important; background: transparent !important; }
 
-        /* تموضع الخانات وتنسيق خانة التاريخ (سطرين: الهجري فوق والميلادي تحت) */
-        .inp-date-top { 
-            top: 349px; 
-            left: 45px; 
-            width: 155px; 
-            height: 38px;         /* ارتفاع كافي لسطرين */
-            font-size: 14px;       /* حجم خط صغير ومناسب */
+        /* تعديل خانة التاريخ لتكون textarea قابلة للتعديل والمسح مع ثبات السطرين */
+        .inp-date-top {  
+            top: 349px;  
+            left: 45px;  
+            width: 155px;  
+            height: 38px;          /* ارتفاع كافي لسطرين */
+            font-size: 13px;       /* حجم خط مناسب تماماً لسطرين */
             font-weight: bold;     /* خط عريض */
-            line-height: 1;      /* مسافة مناسبة بين السطرين */
-            padding-top: 3px;
+            line-height: 1.25;     /* مسافة دقيقة ومثالية بين السطرين لمنع التداخل */
+            padding-top: 2px;
+            white-space: pre-wrap;
+            overflow: hidden;
         }
+
         .plate-num { top: 425px; left: 210px; width: 120px; }
         .driver-name { top: 425px; left: 343px; width: 190px; }
         .id-num { top: 425px; left: 542px; width: 110px; }
@@ -116,17 +119,16 @@
         .col-nat { left: 285px; width: 120px; }
         .col-passport { left: 55px; width: 220px; }
 
-        @media print { 
+        @media print {  
             .header-bg, .toolbar { display: none !important; }
-            @page { size: A4; margin: 0 !important; } 
-            .page { margin: 0 !important; border: none !important; } 
+            @page { size: A4; margin: 0 !important; }  
+            .page { margin: 0 !important; border: none !important; }  
         }
     </style>
 </head>
 <body>
     <div class="toolbar">
         <button id="shareBtn" class="share-btn">
-
             <!-- أيقونة تطبيق الواتساب الرسمية -->
             <svg class="whatsapp-icon-img" viewBox="0 0 32 32">
                 <circle cx="16" cy="16" r="16" fill="#25D366"/>
@@ -159,8 +161,8 @@
 
     <div id="pdf-content">
         <div class="page" id="page1">
-            <!-- تم تغيير خانة التاريخ إلى textarea لتشمل سطرين (الهجري فوق والميلادي تحت) -->
-<textarea id="todayDate" class="inp-date-top" data-save="d1"></textarea>
+            <!-- إعادة عنصر textarea مع خصائص منسقة تمنع التداخل وتحافظ على التعديل -->
+            <textarea id="todayDate" class="inp-date-top" data-save="d1"></textarea>
             <input type="text" class="from-loc" data-save="d6">
             <input type="text" class="to-loc" data-save="d7">
             <div id="passenger-inputs"></div>
@@ -171,7 +173,7 @@
     </div>
 
     <script>
-        // --- إعداد الهوية وتوليد الخانات (نفس الكود السابق) ---
+        // --- إعداد الهوية وتوليد الخانات ---
         const path = window.location.pathname;
         let pageID = path.includes('/1/') ? "D1_" : (path.includes('/2/') ? "D2_" : "D3_");
         
@@ -186,9 +188,14 @@
         container.innerHTML = rowsHtml;
 
         const allInputs = document.querySelectorAll('input[data-save], textarea[data-save]');
+
         // دالة التاريخ: الهجري في السطر العلوي والميلادي في السطر السفلي
         function applyTodayDate() {
             const dateInput = document.getElementById('todayDate');
+            
+            // إذا كان المستخدم قد عدل التاريخ مسبقاً وحفظه، لا تقم بالكتابة فوقه تلقائياً
+            if (localStorage.getItem(pageID + "d1")) return;
+
             const today = new Date();
             
             // التاريخ الميلادي
@@ -213,28 +220,33 @@
                 hijriDate = "";
             }
 
-            // الهجري في السطر الأول والميلادي في السطر الثاني (باستخدام \n)
             const finalDateString = hijriDate ? `${hijriDate}\n${gregorianDate}` : gregorianDate;
             
             dateInput.value = finalDateString;
             localStorage.setItem(pageID + "d1", finalDateString);
         }
 
-        // حفظ البيانات
-
+        // حفظ البيانات عند التعديل اليدوي
         allInputs.forEach(input => {
             input.addEventListener('input', () => localStorage.setItem(pageID + input.getAttribute('data-save'), input.value));
         });
+
         window.addEventListener('load', () => {
             allInputs.forEach(input => {
                 const val = localStorage.getItem(pageID + input.getAttribute('data-save'));
                 if (val) input.value = val;
             });
-            // وضع التاريخ الحالي دائماً
+            // وضع التاريخ الحالي إذا لم يكن محفوظاً مسبقاً
             applyTodayDate();
         });
 
-        function clearData() { if(confirm("مسح؟")) { allInputs.forEach(i => { localStorage.removeItem(pageID+i.getAttribute('data-save')); i.value=''; }); } }
+        function clearData() { 
+            if(confirm("مسح جميع البيانات؟")) { 
+                allInputs.forEach(i => { localStorage.removeItem(pageID+i.getAttribute('data-save')); i.value=''; }); 
+                applyTodayDate(); // إعادة ضبط تاريخ اليوم بعد المسح
+            } 
+        }
+
         // --- ميزة نسخ بيانات الركاب ---
         document.getElementById('copyBtn').addEventListener('click', function() {
             let passengersData = [];
@@ -267,7 +279,6 @@
 
             let passengersData = JSON.parse(savedData);
             
-            // تفريغ خانات الركاب الحالية أولاً وحذفها من التخزين المحلي
             for (let i = 0; i < 16; i++) {
                 let nameInput = document.querySelector(`input[data-save="n${i}"]`);
                 let natInput = document.querySelector(`input[data-save="nat${i}"]`);
@@ -282,7 +293,6 @@
                 localStorage.removeItem(pageID + `p${i}`);
             }
 
-            // لصق البيانات الجديدة بالترتيب وتخزينها
             passengersData.forEach((passenger, i) => {
                 if (i < 16) {
                     let nameInput = document.querySelector(`input[data-save="n${i}"]`);
@@ -302,36 +312,31 @@
             alert("تم لصق بيانات الركاب بنجاح!");
         });
 
-
-
-        // --- التعديل الجذري لحل مشكلة القص في سفاري وآيفون ---
+        // --- تصدير الـ PDF ومشاركة واتساب ---
         document.getElementById('shareBtn').addEventListener('click', async function() {
             const element = document.getElementById('pdf-content');
             
-            // 1. إضافة كلاس التصدير
             element.classList.add('exporting');
             
-            // 2. إعدادات خاصة جداً لسفاري
             const opt = {
                 margin: 0,
                 filename: 'كشف_الركاب.pdf',
                 image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: { 
-                    scale: 2,           // تحسين الدقة
+                    scale: 2,           
                     useCORS: true, 
                     logging: false,
                     letterRendering: true,
                     allowTaint: false,
-                    scrollX: 0,         // منع الإزاحة الجانبية
+                    scrollX: 0,          
                     scrollY: 0,
-                    windowWidth: 794    // تثبيت عرض النافذة أثناء الالتقاط لسفاري
+                    windowWidth: 794    
                 },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
                 pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
             };
 
             try {
-                // إجبار المتصفح على العودة لأعلى الصفحة قبل البدء (مهم لسفاري)
                 window.scrollTo(0, 0);
                 
                 const pdfWorker = html2pdf().set(opt).from(element);
